@@ -6,7 +6,7 @@ from prettytable import PrettyTable
 
 #THIS FILE IS THE SAME AS CELL.PY BUT REMOVED UNNECESSARY CODES FOR FINALIZATION AND OPTIMAL TESTING 
 
-workbook = openpyxl.load_workbook('BACKEND\Excel Files\APRIL.xlsx')
+workbook = openpyxl.load_workbook('BACKEND\Excel Files\MAY.xlsx')
 
 # Find the position of the cell that contains the word "Consumables"
 sheet = workbook['Account Transactions']
@@ -22,7 +22,7 @@ total_factory = 'TOTAL FACTORY SUPPLIES'
 start_row = None
 end_row = None
 
-BSP_RATE = 56.911
+BSP_RATE = 57.762
 
 
 def row_finder(workbook,sheet,target_value,target_value2,start_row,end_row):
@@ -37,7 +37,9 @@ def row_finder(workbook,sheet,target_value,target_value2,start_row,end_row):
                 end_row = row
         
         # Exit loop if both start_row and end_row are found
-        
+        if start_row == None and end_row == None:
+            start_row = 0
+            end_row = 0
         
         if start_row and end_row:
             break       
@@ -82,8 +84,11 @@ for row in sheet.iter_rows(max_row=max_search_rows):
             if cell_value == target_value3:
                 product_column_letter = openpyxl.utils.get_column_letter(cell.column)
                 break
+    
+    
     if product_column_letter:
         break
+    
 start_row = start_row
 
 
@@ -281,28 +286,48 @@ outside_data = getting_data(sheet, debit_column_letter, outside_row, BSP_RATE)
 tooling_row = categorize_rows(sheet, tooling_value, product_column_variable)
 tooling_data = getting_data(sheet, debit_column_letter, tooling_row, BSP_RATE)
 
+def replace_zero_values(data):
+    return ["-" if value == "0.00" else value for value in data]
 
 
-print("Consumable Data")
-print(consume_data)
-print("Cost of Raw Materials Pins")
-print(pin_data)
-print("Cost of Raw Materials - Vertical Head")
-print(vertical_data)
-print("Factory Supplies")
-print(factory_data)
-print("Freight Consumables and Tooling Expense")
-print(freight1_data)
-print("Freight Direct Material")
-print(freight2_data)
-print("Outside Services/Fabric")
-print(outside_data)
-print("Tooling Expenses")
-print(tooling_data)
+data_variables = [
+    ("Consumables", consume_data),
+    ("Cost of Raw Materials - Pins", pin_data),
+    ("Cost of Raw Materials - Vertical head", vertical_data),
+    ("Factory Supplies", factory_data),
+    ("Freight In - Consumables And Tooling Expense", freight1_data),
+    ("Freight In - Direct Materials", freight2_data),
+    ("Outside Services/Fabrication", outside_data),
+    ("Tooling Expense", tooling_data)
+]
 
 
 
+# Extract the variable names and data
+
+variable_names = [var[0] for var in data_variables]
+data_values = [replace_zero_values(var[1]) for var in data_variables]
+
+# Create a DataFrame
+df = pd.DataFrame(data_values, columns=[
+    "Probecard - Cantilever",
+    "Probecard - Vertical",
+    "Fabrication1 - PCB/Board Repair",
+    "Fabrication2 - Test Sockets",
+    "Fabrication3 - Mechanical/General",
+    "Total Value"
+])
 
 
 
-# Print the arrays
+
+
+# Add the variable names as a column
+df.insert(0, "Variable Name", variable_names)
+
+# Save the DataFrame to an Excel file with proper spacing
+excel_file_path = "output_data.xlsx"
+df.to_excel(excel_file_path, index=False, engine='openpyxl')
+
+# Display a message indicating success
+print(f"The data has been successfully written to {excel_file_path}")
