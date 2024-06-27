@@ -1,12 +1,16 @@
 import openpyxl.utils
 import pandas as pd
 
-import openpyxl
+from openpyxl import load_workbook
+from openpyxl.styles import Font, PatternFill, Alignment
 from prettytable import PrettyTable
 
 #THIS FILE IS THE SAME AS CELL.PY BUT REMOVED UNNECESSARY CODES FOR FINALIZATION AND OPTIMAL TESTING 
 
-workbook = openpyxl.load_workbook('BACKEND\Excel Files\MAY.xlsx')
+
+
+input_file = 'BACKEND\Excel Files\MAY.xlsx'
+workbook = openpyxl.load_workbook(input_file)
 
 # Find the position of the cell that contains the word "Consumables"
 sheet = workbook['Account Transactions']
@@ -302,7 +306,22 @@ data_variables = [
 ]
 
 
+#ADDITIONAL OF TOTAL VALUES IN COLUMN
+probe_card_value = 0
+probe_card_value = float(consume_data[0]) + float(pin_data[0]) + float(vertical_data[0]) + float(factory_data [0]) + float(freight1_data[0]) + float(freight2_data[0]) + float(outside_data[0]) + float(tooling_data[0])
+probe_cardv_value = float(consume_data[1]) + float(pin_data[1]) + float(vertical_data[1]) + float(factory_data [1]) + float(freight1_data[1]) + float(freight2_data[1]) + float(outside_data[1]) + float(tooling_data[1])
+fabrication1_value = float(consume_data[2]) + float(pin_data[2]) + float(vertical_data[2]) + float(factory_data [2]) + float(freight1_data[2]) + float(freight2_data[2]) + float(outside_data[2]) + float(tooling_data[2])
+fabrication2_value = float(consume_data[3]) + float(pin_data[3]) + float(vertical_data[3]) + float(factory_data [3]) + float(freight1_data[3]) + float(freight2_data[3]) + float(outside_data[3]) + float(tooling_data[3])
+fabrication3_value = float(consume_data[4]) + float(pin_data[4]) + float(vertical_data[4]) + float(factory_data [4]) + float(freight1_data[4]) + float(freight2_data[4]) + float(outside_data[4]) + float(tooling_data[4])
+total_total_value = float(consume_data[5]) + float(pin_data[5]) + float(vertical_data[5]) + float(factory_data [5]) + float(freight1_data[5]) + float(freight2_data[5]) + float(outside_data[5]) + float(tooling_data[5])
+print("probe value is:", probe_card_value)
+print("2", probe_cardv_value)
+print("3", fabrication1_value)
+print("4", fabrication2_value)
+print("5", fabrication3_value)
+print("6", total_total_value)
 
+print("Consume Data: DATA",consume_data[1])
 # Extract the variable names and data
 
 variable_names = [var[0] for var in data_variables]
@@ -319,15 +338,87 @@ df = pd.DataFrame(data_values, columns=[
 ])
 
 
-
-
-
 # Add the variable names as a column
 df.insert(0, "Variable Name", variable_names)
 
-# Save the DataFrame to an Excel file with proper spacing
-excel_file_path = "output_data.xlsx"
-df.to_excel(excel_file_path, index=False, engine='openpyxl')
+new_row = {'Total Value',probe_card_value, probe_cardv_value, fabrication1_value,fabrication2_value,fabrication3_value,total_total_value}
+new_row = {
+    "Variable Name": 'Total Value',  # Assuming 'Total Value' is the name for the first column
+    "Probecard - Cantilever": probe_card_value,
+    "Probecard - Vertical": probe_cardv_value,
+    "Fabrication1 - PCB/Board Repair": fabrication1_value,
+    "Fabrication2 - Test Sockets": fabrication2_value,
+    "Fabrication3 - Mechanical/General": fabrication3_value,
+    "Total Value": total_total_value
+}
 
+# Append the new row to the DataFrame
+new_row_df = pd.DataFrame([new_row])
+
+# Concatenate the original DataFrame with the new row DataFrame
+df = pd.concat([df, new_row_df], ignore_index=True)
+
+
+
+# Concatenate the original DataFrame with the new row DataFrame
+
+book = load_workbook(input_file)
+sheet_name = 'Table Produced'
+
+
+# Create a Pandas Excel writer using openpyxl
+with pd.ExcelWriter(input_file, engine='openpyxl', mode= 'a', if_sheet_exists='replace') as writer:
+    df.to_excel(writer, index=False, sheet_name=sheet_name, startrow = 2, startcol=2)
+
+wb = load_workbook(input_file)
+ws = wb[sheet_name]
+
+# Adjust column widths
+column_widths = {
+    "H": 25,  # Variable Name
+    "I": 25,  # Probecard - Cantilever
+    "C": 40,  # Probecard - Vertical
+    "D": 25,  # Fabrication1 - PCB/Board Repair
+    "E": 25,  # Fabrication2 - Test Sockets
+    "F": 35,  # Fabrication3 - Mechanical/General
+    "G": 25   # Total Value
+}
+
+for col, width in column_widths.items():
+    ws.column_dimensions[col].width = width
+
+for row in ws.iter_rows(min_row=2, max_row=2 + len(df) + 1, min_col=2, max_col=2 + len(df.columns) + 1):
+    for cell in row:
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+
+for col, width in column_widths.items():
+    ws.column_dimensions[col].width = width
+
+# Set font style and size
+font = Font(name='Tahoma', size=8)
+
+for row in ws.iter_rows(min_row=1, max_row=ws.max_row, min_col=1, max_col=ws.max_column):
+    for cell in row:
+        cell.font = font
+
+for col in range(2, 2 + len(df.columns)):
+    cell = ws.cell(row=2, column=col)
+    cell.font = Font(bold=True)
+
+
+
+
+gray_fill = PatternFill(start_color='D3D3D3', end_color='D3D3D3', fill_type='solid')
+
+for row in ws.iter_rows(min_row=2, max_row=2 + len(df) + 1, min_col=3, max_col=2 + len(df.columns)):
+    for cell in row:
+        cell.fill = gray_fill
+
+
+
+
+
+# Save the workbook with the adjusted column widths
+wb.save(input_file)
 # Display a message indicating success
-print(f"The data has been successfully written to {excel_file_path}")
+print(f"The data has been successfully written to sheet '{sheet_name}' in {input_file}")
